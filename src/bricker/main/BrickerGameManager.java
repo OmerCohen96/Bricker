@@ -1,11 +1,9 @@
 package bricker.main;
 
+import bricker.gameobjects.Ball;
 import danogl.GameManager;
 import danogl.GameObject;
-import danogl.gui.ImageReader;
-import danogl.gui.SoundReader;
-import danogl.gui.UserInputListener;
-import danogl.gui.WindowController;
+import danogl.gui.*;
 import danogl.gui.rendering.ImageRenderable;
 import danogl.gui.rendering.Renderable;
 import danogl.util.Vector2;
@@ -26,9 +24,11 @@ public class BrickerGameManager extends GameManager {
         Renderable ballImage =
                 new ImageReader(windowController).readImage("assets/ball.png", true);
 
-        GameObject ball = new GameObject(Vector2.ZERO, new Vector2(30, 30), ballImage);
+        Sound ballSound = soundReader.readSound("assets/blop_cut_silenced.wav");
 
-        ball.setVelocity(Vector2.DOWN.mult(100));
+        GameObject ball = new Ball(Vector2.ZERO, new Vector2(30, 30), ballImage, ballSound);
+
+        ball.setVelocity(Vector2.DOWN.mult(700));
 
         ball.setCenter(windowController.getWindowDimensions().mult(0.5f));
 
@@ -43,14 +43,22 @@ public class BrickerGameManager extends GameManager {
                 new Vector2(150, 15), paddleImage);
 
         paddle.setCenter(new Vector2(windowController.getWindowDimensions().x()/2,
-                windowController.getWindowDimensions().y()-8));
+                windowController.getWindowDimensions().y()-20));
 
         gameObjects().addGameObject(paddle);
 
+        // paddle for test sound
+        GameObject paddletest =  new GameObject(Vector2.ZERO ,
+                new Vector2(150, 15), paddleImage);
 
+        paddletest.setCenter(new Vector2(windowController.getWindowDimensions().x()/2,
+                20));
+
+        gameObjects().addGameObject(paddletest);
     }
 
     public static void main(String[] args) {
+
         new BrickerGameManager("Bricker", new Vector2(700, 500)).run();
 
 //        new GameManager("Bricker",
