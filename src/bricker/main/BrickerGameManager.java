@@ -1,10 +1,10 @@
 package bricker.main;
 
 import bricker.gameobjects.Ball;
+import bricker.gameobjects.Paddle;
 import danogl.GameManager;
 import danogl.GameObject;
 import danogl.gui.*;
-import danogl.gui.rendering.ImageRenderable;
 import danogl.gui.rendering.Renderable;
 import danogl.util.Vector2;
 
@@ -28,30 +28,31 @@ public class BrickerGameManager extends GameManager {
 
         GameObject ball = new Ball(Vector2.ZERO, new Vector2(30, 30), ballImage, ballSound);
 
-        ball.setVelocity(Vector2.DOWN.mult(700));
+        ball.setVelocity(Vector2.DOWN.mult(500));
 
         ball.setCenter(windowController.getWindowDimensions().mult(0.5f));
 
         gameObjects().addGameObject(ball);
 
-        // create paddle
+        // paddle down
 
         Renderable paddleImage = new ImageReader(windowController)
                 .readImage("assets/paddle.png", true);
 
-        GameObject paddle = new GameObject(Vector2.ZERO ,
-                new Vector2(150, 15), paddleImage);
 
-        paddle.setCenter(new Vector2(windowController.getWindowDimensions().x()/2,
-                windowController.getWindowDimensions().y()-20));
+        GameObject paddle = new Paddle(Vector2.ZERO,
+                new Vector2(150, 15), paddleImage, inputListener, windowController.getWindowDimensions());
+
+        paddle.setCenter(new Vector2(windowController.getWindowDimensions().x() / 2,
+                windowController.getWindowDimensions().y() - 20));
 
         gameObjects().addGameObject(paddle);
 
-        // paddle for test sound
-        GameObject paddletest =  new GameObject(Vector2.ZERO ,
+        // paddle up for test sound
+        GameObject paddletest = new GameObject(Vector2.ZERO,
                 new Vector2(150, 15), paddleImage);
 
-        paddletest.setCenter(new Vector2(windowController.getWindowDimensions().x()/2,
+        paddletest.setCenter(new Vector2(windowController.getWindowDimensions().x() / 2,
                 20));
 
         gameObjects().addGameObject(paddletest);
@@ -59,7 +60,7 @@ public class BrickerGameManager extends GameManager {
 
     public static void main(String[] args) {
 
-        new BrickerGameManager("Bricker", new Vector2(700, 500)).run();
+        new BrickerGameManager("Bricker", new Vector2(1200, 615)).run();
 
 //        new GameManager("Bricker",
 //                new Vector2(700, 500)).run();
