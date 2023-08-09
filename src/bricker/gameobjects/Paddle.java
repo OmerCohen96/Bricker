@@ -44,12 +44,14 @@ public class Paddle extends GameObject {
 
         Vector2 stayInBorder;
         float rightEdge = windowDimensions.x() - MIN_DISTANCE_FROM_SCREEN_EDGE;
-
-        if (this.getTopLeftCorner().x() < MIN_DISTANCE_FROM_SCREEN_EDGE){
-            stayInBorder = new Vector2(MIN_DISTANCE_FROM_SCREEN_EDGE, this.getTopLeftCorner().y());
+        if (this.getTopLeftCorner().x() < MIN_DISTANCE_FROM_SCREEN_EDGE) {
+            stayInBorder = new Vector2(
+                    MIN_DISTANCE_FROM_SCREEN_EDGE, this.getTopLeftCorner().y());
             setTopLeftCorner(stayInBorder);
-        } else if ((this.getTopLeftCorner().x() + this.getDimensions().x()) > rightEdge) {
-            stayInBorder = new Vector2(rightEdge - this.getDimensions().x(), this.getTopLeftCorner().y());
+        }
+         else if ((this.getTopLeftCorner().x() + this.getDimensions().x()) > rightEdge) {
+            stayInBorder = new Vector2(
+                    rightEdge - this.getDimensions().x(), this.getTopLeftCorner().y());
             setTopLeftCorner(stayInBorder);
         }
 
