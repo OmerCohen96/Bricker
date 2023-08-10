@@ -1,17 +1,20 @@
 package bricker.main;
 
+import bricker.brick_strategies.CollisionStrategy;
 import bricker.gameobjects.Ball;
+import bricker.gameobjects.Brick;
 import bricker.gameobjects.Paddle;
 import danogl.GameManager;
 import danogl.GameObject;
 import danogl.gui.*;
+import danogl.gui.rendering.ImageRenderable;
 import danogl.gui.rendering.Renderable;
 import danogl.util.Vector2;
 
 import java.util.Random;
 
 public class BrickerGameManager extends GameManager {
-    private static final float BALL_SPEED = 250f;
+    private static final float BALL_SPEED = 100f;
     private static final float BALL_SIZE = 30f;
     private static final float PADDLE_HEIGHT = 30f;
     private static final float PADDLE_WIDTH = 150f;
@@ -39,6 +42,7 @@ public class BrickerGameManager extends GameManager {
 
         creatBoarders(imageReader, windowController);
         creatPaddle(imageReader, inputListener, soundReader, windowController);
+        createBrickers(imageReader, soundReader,windowController);
 //        GameObject paddle = new Paddle(Vector2.ZERO,
 //                new Vector2(150, 15), paddleImage, inputListener, windowController.getWindowDimensions());
 //        paddle.setCenter(
@@ -58,6 +62,20 @@ public class BrickerGameManager extends GameManager {
 
     }
 
+    private void createBrickers(ImageReader imageReader, SoundReader soundReader, WindowController windowController) {
+        Vector2 windowDimension = windowController.getWindowDimensions();
+        Renderable brickImage =
+                new ImageReader(windowController).readImage("assets/brick.png", false);
+        Vector2 brickDimension = new Vector2(windowDimension.x(),15f);
+
+
+        CollisionStrategy strategy = new CollisionStrategy(this.gameObjects());
+
+        GameObject brick = new Brick(Vector2.ZERO, brickDimension, brickImage, strategy);
+
+        gameObjects().addGameObject(brick);
+    }
+
     private void creatBoarders(ImageReader imageReader, WindowController windowController) {
         Vector2 windowDimension = windowController.getWindowDimensions();
 
@@ -65,12 +83,12 @@ public class BrickerGameManager extends GameManager {
                 new Vector2(1, windowDimension.y());
         Vector2 horizontalPaddleDimension = new Vector2(windowDimension.x(), 1);
 
-        GameObject leftBoarder = new GameObject(Vector2.ZERO, verticalPaddleDimension, null);
+        GameObject leftBoarder = new GameObject(Vector2.LEFT, verticalPaddleDimension, null);
         GameObject rightBoarder =
-                new GameObject(Vector2.RIGHT.mult(windowDimension.x()), verticalPaddleDimension, null);
-        GameObject upBoarder = new GameObject(Vector2.UP, horizontalPaddleDimension, null);
+                new GameObject(Vector2.RIGHT.mult(windowDimension.x()+1), verticalPaddleDimension, null);
+        GameObject upBoarder = new GameObject(Vector2.UP.mult(2), horizontalPaddleDimension, null);
         GameObject buttonBoarder =
-                new GameObject(Vector2.DOWN.mult(windowDimension.y()), horizontalPaddleDimension, null);
+                new GameObject(Vector2.DOWN.mult(windowDimension.y()+1), horizontalPaddleDimension, null);
 
 
         gameObjects().addGameObject(leftBoarder);
@@ -87,7 +105,7 @@ public class BrickerGameManager extends GameManager {
         Renderable paddleImage = new ImageReader(windowController)
                 .readImage("assets/paddle.png", true);
         GameObject paddle = new Paddle(Vector2.ZERO,
-                new Vector2(150, 15), paddleImage, inputListener, windowDimension);
+                new Vector2(PADDLE_WIDTH, PADDLE_HEIGHT), paddleImage, inputListener, windowDimension);
 
         paddle.setCenter(
                 new Vector2(windowDimension.x() / 2, windowDimension.y() - 20));
