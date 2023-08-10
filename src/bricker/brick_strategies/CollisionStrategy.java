@@ -1,6 +1,7 @@
 package bricker.brick_strategies;
 import danogl.GameObject;
 import danogl.collisions.GameObjectCollection;
+import danogl.collisions.Layer;
 
 public class CollisionStrategy {
     private GameObjectCollection objects;
@@ -9,7 +10,7 @@ public class CollisionStrategy {
         this.objects = objects;
     }
     public void onCollision(GameObject thisObj, GameObject otherObj) {
-        objects.removeGameObject(thisObj);
+        objects.removeGameObject(thisObj, Layer.STATIC_OBJECTS);
 
     }
 }
