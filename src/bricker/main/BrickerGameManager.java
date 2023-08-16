@@ -20,13 +20,15 @@ public class BrickerGameManager extends GameManager {
     private static final float PADDLE_HEIGHT = 15f;
     private static final float PADDLE_WIDTH = 150f;
     private static final float BRICK_HEIGHT = 20f;
-    private static final int BRICK_PER_ROW = 2;
-    private static final int ROWS_OF_BRICKS =1;
+    private static final int BRICK_PER_ROW = 8;
+    private static final int BRICKS_PER_COL = 5;
     private static final float MIN_DISTANCE_FROM_SCREEN_EDGE = 10f;
+    private static final int DISQUALIFICATIONS = 3; // if we want multiple disqualifications until the game end
     private Vector2 windowDimension;
     private GameObject ball;
     private WindowController windowController;
-    private Counter counterBricks;
+    private Counter counterBricks, counterDisqualifications = new Counter(0);
+    private GameObject[] disqualificationsHearts;
 
     public BrickerGameManager(
             String windowTitle, Vector2 windowsDimension) {
@@ -40,14 +42,21 @@ public class BrickerGameManager extends GameManager {
         this.windowDimension = windowController.getWindowDimensions();
         this.windowController = windowController;
 
+        // Create background
+
         Renderable backGroundImg = imageReader.readImage("assets/DARK_BG2_small.jpeg", false);
         GameObject backGround = new GameObject(Vector2.ZERO, windowDimension, backGroundImg);
         gameObjects().addGameObject(backGround, Layer.BACKGROUND);
 
-        creatBoarders(imageReader, windowController);
-        createBricks(imageReader, soundReader,windowController);
-        creatPaddle(imageReader, inputListener, soundReader, windowController);
-        creatBall(imageReader, soundReader, windowController);
+        // Create game objects
+        if (DISQUALIFICATIONS > 0)
+            createDisqualifications(imageReader, this.windowDimension);
+
+        creatBoarders(imageReader, this.windowDimension);
+        createBricks(imageReader, soundReader, this.windowController);
+        creatPaddle(imageReader, inputListener, this.windowController);
+        creatBall(imageReader, soundReader, this.windowController);
+
     }
 
     @Override
@@ -58,47 +67,82 @@ public class BrickerGameManager extends GameManager {
 
     private void checkForGameEnd() {
         String prompt = "";
-        if (ball.getTopLeftCorner().y() > windowDimension.y()){
-            prompt = "you lose ):";
+        if (ball.getTopLeftCorner().y() > windowDimension.y()) {
+            if (counterDisqualifications.value() > 0){
+                this.handleDisqualification();
+            } else {
+                prompt = "you LOSE!";
+            }
         }
-        if (counterBricks.value() == 0){
-            prompt = "you WIN !!!";
+        if (counterBricks.value() == 0) {
+            prompt = "you WIN!";
         }
-        if(gameObjects().isLayerEmpty(Layer.STATIC_OBJECTS)){
-            if (!prompt.isEmpty()) {
-                prompt += " Play again?";
-                if (windowController.openYesNoDialog(prompt)) {
-                    windowController.resetGame();
-                } else {
-                    windowController.closeWindow();
-                }
+
+        if (!prompt.isEmpty()) {
+            prompt += " Play again?";
+            if (windowController.openYesNoDialog(prompt)) {
+                windowController.resetGame();
+            } else {
+                windowController.closeWindow();
             }
         }
     }
 
-    private void createBricks(ImageReader imageReader, SoundReader soundReader, WindowController windowController) {
+    private void createDisqualifications(ImageReader imageReader, Vector2 windowDimension) {
+        Renderable heart = imageReader.readImage("assets/heart.png", true);
+        Vector2 heartDimension = new Vector2(25f, 25f);
+        float spacious = 5f;
+        disqualificationsHearts = new GameObject[DISQUALIFICATIONS];
+
+        for (int i = 0; i < DISQUALIFICATIONS; i++) {
+            GameObject heartForDisqual = new GameObject(
+                    Vector2.ZERO, heartDimension, heart);
+            heartForDisqual.setTopLeftCorner(
+                    new Vector2(MIN_DISTANCE_FROM_SCREEN_EDGE + (heartDimension.x() + spacious) * i,
+                            windowDimension.y() - heartDimension.y() - 10));
+            gameObjects().addGameObject(heartForDisqual, Layer.BACKGROUND);
+            disqualificationsHearts[i] = heartForDisqual;
+        }
+        counterDisqualifications.increaseBy(DISQUALIFICATIONS);
+    }
+
+    private void handleDisqualification() {
+        counterDisqualifications.decrement();
+        this.gameObjects().removeGameObject(
+                disqualificationsHearts[counterDisqualifications.value()], Layer.BACKGROUND);
+        this.ball.setCenter(windowDimension.mult(0.5f));
+
+        Random dir = new Random();
+        if (dir.nextBoolean()){
+            this.ball.setVelocity(ball.getVelocity().multX(-1));
+        }
+    }
+
+    private void createBricks(ImageReader imageReader, SoundReader soundReader,
+                              WindowController windowController) {
         Renderable brickImage = imageReader.readImage("assets/brick.png", true);
 
         float brickWidth = (windowDimension.x() - (BRICK_PER_ROW - 1) - 2 * MIN_DISTANCE_FROM_SCREEN_EDGE)
-                / (float)BRICK_PER_ROW;
+                / (float) BRICK_PER_ROW;
         Vector2 brickDimension = new Vector2(brickWidth, BRICK_HEIGHT);
 
         counterBricks = new Counter();
         CollisionStrategy strategy = new CollisionStrategy(this.gameObjects(), counterBricks);
 
-        for (int i = 0; i < ROWS_OF_BRICKS; i++) {
+        for (int i = 0; i < BRICKS_PER_COL; i++) {
             for (int j = 0; j < BRICK_PER_ROW; j++) {
-                float cordY = BRICK_HEIGHT * (float)i + MIN_DISTANCE_FROM_SCREEN_EDGE + (float)i ;
-                float cordX = brickWidth * (float)j + MIN_DISTANCE_FROM_SCREEN_EDGE + (float)j;
+                float cordY = BRICK_HEIGHT * (float) i + MIN_DISTANCE_FROM_SCREEN_EDGE + (float) i;
+                float cordX = brickWidth * (float) j + MIN_DISTANCE_FROM_SCREEN_EDGE + (float) j;
 
                 GameObject brick = new Brick(Vector2.ZERO, brickDimension, brickImage, strategy);
                 brick.setTopLeftCorner(new Vector2(cordX, cordY));
                 gameObjects().addGameObject(brick, Layer.STATIC_OBJECTS);
-                counterBricks.increment();
             }
         }
+        counterBricks.increaseBy(BRICK_PER_ROW * BRICKS_PER_COL);
     }
-    private void creatBoarders(ImageReader imageReader, WindowController windowController) {
+
+    private void creatBoarders(ImageReader imageReader, Vector2 windowDimension) {
 
         Vector2 verticalPaddleDimension =
                 new Vector2(1, windowDimension.y());
@@ -106,10 +150,10 @@ public class BrickerGameManager extends GameManager {
 
         GameObject leftBoarder = new GameObject(Vector2.LEFT, verticalPaddleDimension, null);
         GameObject rightBoarder =
-                new GameObject(Vector2.RIGHT.mult(windowDimension.x()+1), verticalPaddleDimension, null);
+                new GameObject(Vector2.RIGHT.mult(windowDimension.x() + 1), verticalPaddleDimension, null);
         GameObject upBoarder = new GameObject(Vector2.UP.mult(2), horizontalPaddleDimension, null);
         GameObject buttonBoarder =
-                new GameObject(Vector2.DOWN.mult(windowDimension.y()+1), horizontalPaddleDimension, null);
+                new GameObject(Vector2.DOWN.mult(windowDimension.y() + 1), horizontalPaddleDimension, null);
 
         gameObjects().addGameObject(leftBoarder);
         gameObjects().addGameObject(rightBoarder);
@@ -118,8 +162,7 @@ public class BrickerGameManager extends GameManager {
     }
 
     private void creatPaddle(
-            ImageReader imageReader, UserInputListener inputListener,
-            SoundReader soundReader, WindowController windowController) {
+            ImageReader imageReader, UserInputListener inputListener,WindowController windowController) {
 
         Renderable paddleImage = imageReader.readImage("assets/paddle.png", true);
         GameObject paddle = new Paddle(Vector2.ZERO,
@@ -150,14 +193,14 @@ public class BrickerGameManager extends GameManager {
 
         ball.setVelocity(new Vector2(ballVelX, ballVelY));
 
-        }
-
-
-        public static void main (String[]args){
-
-            new BrickerGameManager("Bricker", new Vector2(1000, 600)).run();
-
-        }
     }
+
+
+    public static void main(String[] args) {
+
+        new BrickerGameManager("Bricker", new Vector2(1000, 640)).run();
+
+    }
+}
 
 
