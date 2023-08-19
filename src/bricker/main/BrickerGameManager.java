@@ -1,6 +1,8 @@
 package bricker.main;
 
+import bricker.brick_strategies.BrickStrategyFactory;
 import bricker.brick_strategies.CollisionStrategy;
+import bricker.brick_strategies.RemoveBrickStrategy;
 import bricker.gameobjects.Ball;
 import bricker.gameobjects.Brick;
 import bricker.gameobjects.Paddle;
@@ -12,10 +14,12 @@ import danogl.gui.rendering.Renderable;
 import danogl.util.Counter;
 import danogl.util.Vector2;
 
+import java.sql.Time;
 import java.util.Random;
 
 public class BrickerGameManager extends GameManager {
-    private static final float BALL_SPEED = 220f;
+    private static final int DISQUALIFICATIONS = 3; // if we want multiple disqualifications until the game end
+    private static final float BALL_SPEED = 250f;
     private static final float BALL_SIZE = 30f;
     private static final float PADDLE_HEIGHT = 15f;
     private static final float PADDLE_WIDTH = 150f;
@@ -23,12 +27,14 @@ public class BrickerGameManager extends GameManager {
     private static final int BRICK_PER_ROW = 8;
     private static final int BRICKS_PER_COL = 5;
     private static final float MIN_DISTANCE_FROM_SCREEN_EDGE = 10f;
-    private static final int DISQUALIFICATIONS = 3; // if we want multiple disqualifications until the game end
-    private Vector2 windowDimension;
+    private static final float SLOW_MOTION_FACTOR = 0.5f;
     private GameObject ball;
+    private Vector2 windowDimension;
     private WindowController windowController;
-    private Counter counterBricks, counterDisqualifications = new Counter(0);
+    private Counter counterBricks, counterDisqualifications;
     private GameObject[] disqualificationsHearts;
+    private long start_time;
+    private boolean slowMotion = false;
 
     public BrickerGameManager(
             String windowTitle, Vector2 windowsDimension) {
@@ -49,6 +55,7 @@ public class BrickerGameManager extends GameManager {
         gameObjects().addGameObject(backGround, Layer.BACKGROUND);
 
         // Create game objects
+        counterDisqualifications = new Counter();
         if (DISQUALIFICATIONS > 0)
             createDisqualifications(imageReader, this.windowDimension);
 
@@ -57,11 +64,26 @@ public class BrickerGameManager extends GameManager {
         creatPaddle(imageReader, inputListener, this.windowController);
         creatBall(imageReader, soundReader, this.windowController);
 
+        handleSlowMotion(true);
+    }
+
+    private void handleSlowMotion(boolean startSlowMotion) {
+        if (startSlowMotion) {
+            slowMotion = true;
+            windowController.setTimeScale(SLOW_MOTION_FACTOR);
+            start_time = System.currentTimeMillis();
+        } else {
+            slowMotion = false;
+            windowController.setTimeScale(1);
+        }
     }
 
     @Override
     public void update(float deltaTime) {
         super.update(deltaTime);
+        if (slowMotion && System.currentTimeMillis() - start_time > 2000) {
+            handleSlowMotion(false);
+        }
         checkForGameEnd();
     }
 
@@ -116,6 +138,7 @@ public class BrickerGameManager extends GameManager {
         if (dir.nextBoolean()){
             this.ball.setVelocity(ball.getVelocity().multX(-1));
         }
+        handleSlowMotion(true);
     }
 
     private void createBricks(ImageReader imageReader, SoundReader soundReader,
@@ -126,20 +149,19 @@ public class BrickerGameManager extends GameManager {
                 / (float) BRICK_PER_ROW;
         Vector2 brickDimension = new Vector2(brickWidth, BRICK_HEIGHT);
 
-        counterBricks = new Counter();
-        CollisionStrategy strategy = new CollisionStrategy(this.gameObjects(), counterBricks);
+        counterBricks = new Counter(BRICK_PER_ROW * BRICKS_PER_COL);
+        BrickStrategyFactory factory = new BrickStrategyFactory(this.gameObjects(), counterBricks, windowController, ball);
 
         for (int i = 0; i < BRICKS_PER_COL; i++) {
             for (int j = 0; j < BRICK_PER_ROW; j++) {
                 float cordY = BRICK_HEIGHT * (float) i + MIN_DISTANCE_FROM_SCREEN_EDGE + (float) i;
                 float cordX = brickWidth * (float) j + MIN_DISTANCE_FROM_SCREEN_EDGE + (float) j;
 
-                GameObject brick = new Brick(Vector2.ZERO, brickDimension, brickImage, strategy);
+                GameObject brick = new Brick(Vector2.ZERO, brickDimension, brickImage, factory.getStrategy());
                 brick.setTopLeftCorner(new Vector2(cordX, cordY));
                 gameObjects().addGameObject(brick, Layer.STATIC_OBJECTS);
             }
         }
-        counterBricks.increaseBy(BRICK_PER_ROW * BRICKS_PER_COL);
     }
 
     private void creatBoarders(ImageReader imageReader, Vector2 windowDimension) {
@@ -199,6 +221,7 @@ public class BrickerGameManager extends GameManager {
     public static void main(String[] args) {
 
         new BrickerGameManager("Bricker", new Vector2(1000, 640)).run();
+
 
     }
 }
