@@ -1,5 +1,7 @@
 package bricker.brick_strategies;
 
+import bricker.brick_strategies.collision_objects.NarroWidenPaddle;
+import bricker.brick_strategies.collision_objects.SlowFastMotion;
 import danogl.GameObject;
 import danogl.collisions.GameObjectCollection;
 import danogl.gui.WindowController;
@@ -8,7 +10,7 @@ import danogl.util.Counter;
 import java.util.Random;
 
 public class BrickStrategyFactory {
-    public static final int NUM_OF_STRATEGIES = 2;
+    public static final int NUM_OF_STRATEGIES = 4;
     private Random random = new Random();
     private GameObjectCollection objects;
     private Counter counterBricks;
@@ -29,21 +31,28 @@ public class BrickStrategyFactory {
 
         int ranInt = random.nextInt(1, NUM_OF_STRATEGIES+1);
 
-        switch (ranInt) {
+        switch (3) {
             case 1:
                 strategy = new RemoveBrickStrategy(objects, counterBricks);
                 break;
             case 2:
                 strategy = new ThreeBallsStrategy(objects, counterBricks, windowController);
                 break;
+            case 3:
+                strategy = new FallObjectStrategy(objects, counterBricks,windowController);
+                break;
+            case 4:
+                strategy = new FallObjectStrategy(objects, counterBricks, windowController);
         }
         return strategy;
     }
 
     public static void main(String[] args) {
-        for (int i = 0; i <100 ; i++) {
+        Random random1 = new Random();
 
-            System.out.println(new Random().nextInt(1, NUM_OF_STRATEGIES+1));
+        while (true){
+            System.out.println(random1.nextInt(0,2));
         }
     }
+
 }
